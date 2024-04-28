@@ -1,0 +1,63 @@
+name: deploy-client
+
+on:
+  push:
+    branches: [ "master" ]
+
+env:
+  SERVICE_NAME: client
+  DEPLOYMENT_NAME: client-depl
+  DEPL_FILE: client-depl.yaml
+  PROJECT_ID: ${{ secrets.GKE_PROJECT_ID }}
+  GAR_LOCATION: us 
+  GKE_CLUSTER: ticketing-dev
+  GKE_ZONE: us-central1-c
+  REPOSITORY: us.gcr.io/${{ secrets.GKE_PROJECT_ID }}
+
+jobs:
+  setup-build-publish-deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: 'auth'
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          project_id: ${{ secrets.GKE_PROJECT_ID }}
+          service_account_key: ${{ secrets.SA_CREDS }}
+          install_components: 'gke-gcloud-auth-plugin'
+          export_default_credentials: true
+
+      - name: Build
+        run: |-
+          cd $SERVICE_NAME
+          docker build -f Dockerfile.prod \
+            --tag "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVICE_NAME:$GITHUB_SHA" \
+            --build-arg GITHUB_SHA="$GITHUB_SHA" \
+            --build-arg GITHUB_REF="$GITHUB_REF" \
+            .
+
+      - name: Publish
+        run: |-
+          gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
+          docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVICE_NAME:$GITHUB_SHA"
+
+      - name: Deploy
+        run: |-
+          cd $SERVICE_NAME/infra
+          gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project $PROJECT_ID
+          sed -i.bak "s|REPOSITORY|$REPOSITORY|g" $DEPL_FILE
+          sed -i.bak "s|PROJECT_ID|$PROJECT_ID|g" $DEPL_FILE
+          sed -i.bak "s|IMAGE|$SERVICE_NAME|g" $DEPL_FILE
+          sed -i.bak "s|TAG|$GITHUB_SHA|g" $DEPL_FILE
+          kubectl apply -f $DEPL_FILE
+          kubectl rollout status deployment/$DEPLOYMENT_NAME
+          kubectl get services -o wide

@@ -1,0 +1,74 @@
+apiVersion: skaffold/v2alpha3
+kind: Config
+deploy:
+  kubectl:
+    manifests:
+      - ./auth/infra/*
+      - ./client/infra/*
+      - ./expiration/infra/*
+      - ./orders/infra/*
+      - ./payments/infra/*
+      - ./tickets/infra/*
+      - ./infra/k8s/*
+build:
+  # local:
+  #   push: false
+  googleCloudBuild:
+    projectId: PROJECT_ID
+  artifacts:
+    - image: us.gcr.io/PROJECT_ID/auth
+      context: auth
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "src/**/*.ts"
+            dest: .
+    - image: us.gcr.io/PROJECT_ID/static-website
+      context: static-website
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "index.html"
+            dest: .
+    - image: us.gcr.io/PROJECT_ID/client
+      context: client
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "**/*.js"
+            dest: .
+    - image: us.gcr.io/PROJECT_ID/tickets
+      context: tickets
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "src/**/*.ts"
+            dest: .
+    - image: us.gcr.io/PROJECT_ID/orders
+      context: orders
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "src/**/*.ts"
+            dest: .
+    - image: us.gcr.io/PROJECT_ID/expiration
+      context: expiration
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "src/**/*.ts"
+            dest: .
+    - image: us.gcr.io/PROJECT_ID/payments
+      context: payments
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: "src/**/*.ts"
+            dest: .

@@ -1,0 +1,9 @@
+skaffold dev --no-prune=false --cache-artifacts=false
+
+✗ kubectl rollout restart deployment ingress-nginx-controller -n ingress-nginx
+
+http://ingress-nginx-controller.ingress-nginx.svc.cluster.local/api/users/
+http://servicename.namespace.svc.cluster.local
+
+
+sed -i.bak "s|SKAFFOLD_PROJECT_ID|my-project-id|g" ./skaffold.yaml
