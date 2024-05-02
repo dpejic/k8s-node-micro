@@ -50,14 +50,17 @@ jobs:
           gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
           docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVICE_NAME:$GITHUB_SHA"
 
+      - name: Update image version in deployment.yaml
+        uses: fjogeleit/yaml-update-action@main
+        with:
+          valueFile: $SERVICE_NAME/infra/$DEPL_FILE
+          propertyPath: 'spec.template.spec.containers[0].image'
+          value: $REPOSITORY/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
+
       - name: Deploy
         run: |-
           cd $SERVICE_NAME/infra
           gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE --project $PROJECT_ID
-          sed -i.bak "s|REPOSITORY|$REPOSITORY|g" $DEPL_FILE
-          sed -i.bak "s|PROJECT_ID|$PROJECT_ID|g" $DEPL_FILE
-          sed -i.bak "s|IMAGE|$SERVICE_NAME|g" $DEPL_FILE
-          sed -i.bak "s|TAG|$GITHUB_SHA|g" $DEPL_FILE
           kubectl apply -f $DEPL_FILE
           kubectl rollout status deployment/$DEPLOYMENT_NAME
           kubectl get services -o wide
