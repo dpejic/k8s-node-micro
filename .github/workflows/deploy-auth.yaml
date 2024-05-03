@@ -54,8 +54,9 @@ jobs:
         run: |
           sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/3.3.0/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
+          echo "yq -i '.spec.template.spec.containers[0].image = \"$REPOSITORY/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA\"' \"$SERVICE_NAME/infra/$DEPL_FILE\""
           yq -i '.spec.template.spec.containers[0].image = "$REPOSITORY/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"' "$SERVICE_NAME/infra/$DEPL_FILE"
-
+          
       - name: Deploy
         run: |-
           cd $SERVICE_NAME/infra
