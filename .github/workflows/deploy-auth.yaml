@@ -52,7 +52,7 @@ jobs:
 
       - name: Update yaml version
         run: |
-          sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/3.3.0/yq_linux_amd64
+          sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/4.42.1/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
           yq eval '.spec.template.spec.containers[0].image = "$REPOSITORY/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"' -i $SERVICE_NAME/infra/$DEPL_FILE
 
