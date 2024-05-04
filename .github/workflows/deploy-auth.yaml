@@ -46,16 +46,18 @@ jobs:
             .
 
       - name: Publish
+        id: publish-image
         run: |-
           gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
           docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVICE_NAME:$GITHUB_SHA"
+          echo "::set-output name=image::$REPOSITORY/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
 
       - name: Update yaml version
         run: |-
           wget -q https://github.com/mikefarah/yq/releases/download/v4.27.5/yq_linux_amd64
           sudo mv yq_linux_amd64 /usr/local/bin/yq
           sudo chmod +x /usr/local/bin/yq
-          yq e -i '.spec.template.spec.containers[0].image |= "$REPOSITORY/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"' '$SERVICE_NAME/infra/$DEPL_FILE'
+          yq e -i '.spec.template.spec.containers[0].image |= "${{ steps.build-image.outputs.image }}"' $SERVICE_NAME/infra/$DEPL_FILE
 
       - name: Deploy
         run: |-
