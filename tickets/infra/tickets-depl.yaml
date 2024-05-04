@@ -31,16 +31,3 @@ spec:
                 secretKeyRef:
                   name: jwt-secret
                   key: JWT_KEY
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: tickets-srv
-spec:
-  selector:
-    app: tickets
-  ports:
-    - name: tickets
-      protocol: TCP
-      port: 3000
-      targetPort: 3000
